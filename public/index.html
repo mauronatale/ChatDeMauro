@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CrotoChat</title>
+<script src="https://www.gstatic.com/firebasejs/5.9.1/firebase.js"></script>
+  <style media="screen">
+    .off{
+      display: none;
+    }
+    .redondo{
+      border-radius: 50%;
+      width: 200px;
+    }
+  </style>
+  
+  <style media="screen">
+      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; text-align: center; }
+      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
+      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
+      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
+      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
+      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
+      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
+      @media (max-width: 600px) {
+        body, #message { margin-top: 0; background: white; box-shadow: none; }
+        body { border-top: 16px solid #ffa100; }
+      }
+
+      #mensajes{
+        text-align: left;
+        list-style: none;
+        height: 200px;
+        overflow: auto;
+      }
+
+
+    </style>
+  </head>
+  <body>
+    <div id="message">
+      <h2 id="name">Bienvenido</h2>
+      <img src="https://www.own3d.tv/wp-content/uploads/2017/12/avatarmaker-matthias-productthumb.gif" alt="" class="redondo" id="pic">
+      <h1></h1>
+      <p id="email">A crotochat, el chat de Mauro Natale</p>
+      <a target="_blank" href="" id="login">Entrar al Chat de Mauro</a>
+      <a target="_blank" href="" id="logout" style="display:none">Salir del Chat de Mauro</a>
+    
+    <div id="mensajesContainer" style="display: none">
+      <ul id="mensajes">
+      </ul>
+      <input type="text" id="mensaje" placeholder="Escribi tu CrotoChat"> 
+        <button id="pushMensaje">Enviar Mensaje</button>
+    </div>
+
+
+    </div>
+    
+
+    <script>
+      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const config = {
+  apiKey: "AIzaSyDnV3YtaWM0Ef245cMkKT5qgTLN0au0oFU",
+  authDomain: "chatmauro-8abd5.firebaseapp.com",
+  databaseURL: "https://chatmauro-8abd5-default-rtdb.firebaseio.com",
+  projectId: "chatmauro-8abd5",
+  storageBucket: "chatmauro-8abd5.appspot.com",
+  messagingSenderId: "488906075448",
+  appId: "1:488906075448:web:d8623111ea39dfb4bb25cd",
+  measurementId: "G-SB2ZV34DJF"
+};
+
+firebase.initializeApp(config);
+
+let btt = document.getElementById('login');
+let off=document.getElementById('logout');
+let name=document.getElementById('name');
+let pic=document.getElementById('pic');
+let email=document.getElementById('email');
+let pushMensaje=document.getElementById('pushMensaje');
+let mensaje=document.getElementById('mensaje');
+let mensajes=document.getElementById('mensajes');
+let mensajesContainer=document.getElementById('mensajesContainer');
+
+
+off.addEventListener('click',(e)=>{
+  e.preventDefault();
+  desloguear()
+})
+
+btt.addEventListener("click",(e)=>{
+  e.preventDefault();
+  loguearConGoogle()
+})
+
+pushMensaje.addEventListener("click",(e)=>{
+  e.preventDefault();
+  guardarMensaje()
+})
+
+
+
+
+
+let usuario={};
+
+function loguearConGoogle(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).then(result=>{
+    console.log("Logueo", result.user.email);
+    usuario = result;
+    lokearUsuario()
+  }).catch(error=>console.log(error.message));
+  
+}
+
+function desloguear(){
+  firebase.auth().signOut().then(function(){
+    console.log('Nos deslogueamos');
+  deslokearUsuario()
+}).catch(function(err){
+    console.log(err,"error loco")
+  })
+}
+
+function lokearUsuario(){
+  btt.style.display = "none";
+  off.style.display = "block";
+  name.innerHTML = usuario.user.displayName;
+  email.innerHTML = usuario.user.email
+  pic.src = usuario.user.photoURL
+  mensajesContainer.style.display = "block"
+  mostrame();
+}
+function deslokearUsuario(){
+  btt.style.display = "block";
+  off.style.display = "none";
+  name.innerHTML = "Bienvenido";
+  email.innerHTML = "A crotochat, el chat de Mauro Natale"
+  pic.src = "https://www.own3d.tv/wp-content/uploads/2017/12/avatarmaker-matthias-productthumb.gif"
+  mensajesContainer.style.display = "none"
+}
+
+
+document.addEventListener("DOMContentLoaded",()=>{
+  firebase.auth().onAuthStateChanged(user=>{
+    if(user){
+      usuario={"user":user};
+      console.log(usuario)
+      lokearUsuario()
+    }
+  })
+})
+
+function guardarMensaje(){
+  const record = {
+    avatar: usuario.user.photoURL,
+    nombre: usuario.user.displayName,
+    txt: mensaje.value
+  }
+
+  const db = firebase.database();
+  const dbRef = db.ref("mensajes");
+  const newMensaje = dbRef.push()
+  newMensaje.set(record);
+
+  mensaje.value="";
+}
+
+
+function mostrame(){
+  const db = firebase.database();
+  const dbRef = db.ref("mensajes");
+  dbRef.on("child_added",snapshot=>{
+    var item = document.createElement('li');
+    item.innerHTML = '<strong>'+snapshot.val().nombre+'</strong>: '+snapshot.val().txt;
+    mensajes.appendChild(item);
+    let items = document.querySelectorAll('li');
+    let last = items[items.length-1];
+    last.scrollIntoView();
+  })
+}
+      
+    </script>
+  </body>
+</html>
